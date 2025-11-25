@@ -8,7 +8,7 @@ config()
 const allDefinitions = [...calendarDefinitions, ...emailDefinitions];
 const allDeclarations = allDefinitions.map(definition => definition.declaration);
 
-// nome -> function
+// dado o nome -> trazer a function a ser executada.  {fnName: fn}
 const allFunctions = Object.fromEntries(allDefinitions.map(definition => [definition.declaration.name, definition.function]));
 
 // console.log(allFunctions);
@@ -21,62 +21,51 @@ const ai = new GoogleGenAI({
 const contents = [
   {
     role: "user",
-    parts: [
-      { text: "Quais eventos eu tenho no dia 2025-05-01?" }
-    ]
+    parts: [{ text: "Remarque todos os eventos do dia 2025-05-01 para 1h mais tarde e avise os convidados." }]
   }
 ]
 
 let response = await ai.models.generateContent({
-  model: "gemini-2.5-flash",
+  model: "gemini-2.5-pro",
   contents: contents,
   config: {
-    tools: [
-      {
-        functionDeclarations: allDeclarations,
-      }
-    ]
+    tools: [{ functionDeclarations: allDeclarations, }]
   }
 })
 
-// console.log(response.candidates[0].content.parts[0]);
+while (response.functionCalls) {
+  const functionCall = response.candidates[0].content.parts[0].functionCall // {args: {}, name: ""}
+  const functionToExecute = functionCall.name
+  const functionParams = functionCall.args
+  console.log(`**Chamando função ${functionToExecute}**`);
 
-const functionCall = response.candidates[0].content.parts[0].functionCall
-const functionToExecute = functionCall.name
-const functionParams = functionCall.args
-console.log(functionToExecute, functionParams);
-
-const fn = allFunctions[functionToExecute]
-console.log(fn);
+  const fn = allFunctions[functionToExecute]
+  // console.log(fn);
 
 
-const result = fn(functionParams)
+  const result = fn(functionParams)
+  console.log(`**Resultado da função: ${result}**`);
 
-console.log(result);
+  // Mandar o result da função de volta para a IA.
+  const functionResponse = {
+    role: "user",
+    parts: [{
+      functionResponse: {
+        name: functionToExecute,
+        response: { result: result }
+      }
+    }]
+  }
 
-// Mandar o result da função de volta para a IA.
-const functionResponse = {
-  role: "user",
-  parts: [{
-    functionResponse: {
-      name: functionToExecute,
-      response: { result: result }
-    }
-  }]
-}
+  contents.push(functionResponse);
 
-contents.push(functionResponse);
-
-response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+  response = await ai.models.generateContent({
+    model: "gemini-2.5-pro",
     contents: contents,
     config: {
-      tools: [
-        {
-          functionDeclarations: allDeclarations
-        }
-      ]
+      tools: [{ functionDeclarations: allDeclarations, }]
     }
-});
+  });
+}
 
 console.log(response.candidates[0].content.parts[0]);
