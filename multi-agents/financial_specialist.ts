@@ -8,19 +8,38 @@ import { z } from "zod";
 const payBill = new DynamicStructuredTool({
   name: "pay_bill",
   description: "",
-  schema: z.object({
-    price: z.number().describe("O valor da conta a ser paga")
-  }),
-  func: async ({ price }) => {
+  schema: z.object({}),
+  func: async () => {
     console.log("Pagando conta...");
-
     return "Conta paga com sucesso.";
   }
 })
 
-const financialSpecialistAgent = createReactAgent({
+const getBill = new DynamicStructuredTool({
+  name: "get_bill",
+  description: "Pegar o valor da conta do usuário",
+  schema: z.object({}),
+  func: async ({ price }) => {
+    console.log("Buscando o valor da conta...")
+    return "Sua conta tem o valor de 500 reais";
+  }
+})
+
+const createBill = new DynamicStructuredTool({
+  name: "create_bill",
+  description: "Cria uma novo boleto para ser pago",
+  schema: z.object({
+    price: z.number().describe("O valor da conta a ser criada")
+  }),
+  func: async ({ price }) => {
+    console.log("Gerando conta...");
+    return "Boleto gerado com sucesso.";
+  }
+})
+
+const agent = createReactAgent({
   llm: ai,
-  tools: [payBill],
+  tools: [payBill, getBill, createBill],
   prompt: new SystemMessage("Você é um analista financeiro de um consultório." +
     "analise a conversa e tome a melhor ação para atender o usuário."
   )
@@ -29,13 +48,13 @@ const financialSpecialistAgent = createReactAgent({
 export async function financialSpecialist(state: typeof State.State) {
   console.log(`Financial Specialist chamado!`);
 
-  const result = await financialSpecialistAgent.invoke(state)
+  const result = await agent.invoke(state)
 
-  const financialSpecialistResponse = result.messages[result.messages.length - 1]?.content;
+  const response = result.messages[result.messages.length - 1]?.content;
 
   return {
     messages: [new HumanMessage({
-      content: financialSpecialistResponse || ""
+      content: `Financial Specialist: ${response || ""}`
     })],
   };
 }
