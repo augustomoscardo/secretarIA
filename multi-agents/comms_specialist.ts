@@ -1,10 +1,10 @@
-import { AIMessage } from "@langchain/core/messages"
+import { HumanMessage } from "@langchain/core/messages"
 import type { State } from "./state.js";
 
 export function commsSpecialist(state: typeof State.State) {
   console.log(`Comms Specialist chamado!`);
 
   return {
-    messages: [new AIMessage("Olá da AI")],
+    messages: [new HumanMessage("Olá da AI")],
   };
 }

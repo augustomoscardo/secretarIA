@@ -22,9 +22,9 @@ const graph = new StateGraph(State)
   .addEdge("comms_specialist", "supervisor")
   .compile()
 
-const result = await graph.invoke({ messages: [new HumanMessage("Olá, quero ver minha conta")] })
+const result = await graph.invoke({ messages: [new HumanMessage("Olá, quero pagar a minha conta de  300 reais")] })
 
-// console.log(result);
+console.log(result);
 
 const drawableGraph = await graph.getGraphAsync()
 const graphImage = await drawableGraph.drawMermaidPng()

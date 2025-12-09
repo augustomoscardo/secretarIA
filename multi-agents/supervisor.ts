@@ -23,21 +23,21 @@ const prompt = ChatPromptTemplate.fromMessages([
 // função que altera o estado 
 export async function supervisor(state: typeof State.State) {
   console.log('Supervisor escolhendo o próximo especialista');
-  console.log(state.messages);
-
 
   const aiWithTool = ai.bindTools([routingTool], {
     tool_choice: "routingTool"
   })
 
-
   const aiResponse = await prompt.pipe(aiWithTool).invoke({ messages: state.messages })
 
   if (aiResponse.tool_calls) {
+    console.log(`Supervisor chamou ${aiResponse.tool_calls[0]?.args.next}`);
+
     return {
       nextNode: aiResponse.tool_calls[0]?.args.next
     }
   } else {
+    console.log(`Supervisor terminou o atendimento.`);
 
     return {
       nextNode: "END"
